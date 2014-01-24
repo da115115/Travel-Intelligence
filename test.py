@@ -8,9 +8,15 @@
 
 import requests
 import json
+import sys
 
 from pylab import *
 
+instructions =\
+"""
+Use:
+    [python] test.py email-address password
+"""
 ########## Load countries.dat ########
 country2code = {}
 with open('countries.dat', 'r') as cfile:
@@ -39,13 +45,10 @@ class TIWebAPI(object):
     """
     Initialize a connection to the server and perform different queries
     """
-    def __init__(self, 
-                 url      = 'https://demo.travel-intelligence.com/api/v1',
-                 email    = 'demo@travel-intelligence.com', 
-                 password = "demo"):
-        """
-        By default connect to demo server and get an authorization token
-        """
+    def __init__(self,                  
+                 email, 
+                 password,
+                 url      = 'https://demo.travel-intelligence.com/api/v1'):
 
         data = '{"session":{"email":"%s", "password":"%s"}}' % (email, password)
         headers = {
@@ -114,13 +117,12 @@ class TIWebAPI(object):
         # TODO
         pass
 
-def primaryMarkets(market, month):
+def primaryMarkets(tiConnection, market, month):
     """
     For a given market and a given month return the top destination countries (including internal travel)
     """
-    ti = TIWebAPI()
 
-    r = ti.search_travel_hits(market, month)
+    r = tiConnection.search_travel_hits(market, month)
     airports = r['search_travel_hits']['top_destinations']['dimension']['destination']['category']['index']
     hits = r['search_travel_hits']['top_destinations']['value']
 
@@ -141,7 +143,10 @@ def primaryMarkets(market, month):
 
 
 if __name__ == '__main__':
-    pm1 = primaryMarkets('ES', '2012-01')
+    if not len(sys.argv) == 3:
+        exit(instructions)
+
+    pm1 = primaryMarkets(TIWebAPI(sys.argv[1], sys.argv[2]), 'ES', '2012-01')
 
     # transform to percentage
     total = float(sum(pm1.values()))   
